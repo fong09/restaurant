@@ -22,7 +22,7 @@ const db = getFirestore(app);
 const categories = ["精選甜點", "咖啡飲品", "輕食套餐"];
 const imageBase64 = "/Image.png";
 
-const heroImages = ["/hero1.jpg", "/hero2.jpg", "/hero3.jpg"];
+const heroImages = ["/dog.png", "/dog.png", "/dog.png"];
 
 const menuItems = [
   { id: 1, name: '藍莓起司蛋糕', description: '濃郁藍莓與起司交織出的完美滋味', price: 120, image: imageBase64, category: '精選甜點' },
