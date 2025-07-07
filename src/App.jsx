@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import QRCode from 'react-qr-code';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
-import { motion } from 'framer-motion';
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import { motion, AnimatePresence } from 'framer-motion';
+import Confetti from 'react-confetti';
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -24,17 +21,17 @@ const categories = ["精選甜點", "咖啡飲品", "輕食套餐"];
 const imageBase64 = "/Image.png";
 
 const menuItems = [
-  { id: 1, name: '藍莓起司蛋糕', price: 120, image: imageBase64, category: '精選甜點', description: '香濃藍莓與起司完美融合' },
-  { id: 2, name: '提拉米蘇', price: 110, image: imageBase64, category: '精選甜點', description: '經典義式甜點，濃郁咖啡香' },
-  { id: 6, name: '草莓千層', price: 130, image: imageBase64, category: '精選甜點', description: '層層酥皮與草莓香氣' },
-  { id: 7, name: '檸檬塔', price: 115, image: imageBase64, category: '精選甜點', description: '酸甜平衡的檸檬風味' },
-  { id: 3, name: '拿鐵咖啡', price: 90, image: imageBase64, category: '咖啡飲品', description: '溫潤順口的經典拿鐵' },
-  { id: 4, name: '抹茶歐蕾', price: 100, image: imageBase64, category: '咖啡飲品', description: '抹茶與牛奶的柔和口感' },
-  { id: 8, name: '卡布奇諾', price: 95, image: imageBase64, category: '咖啡飲品', description: '濃縮與奶泡的完美結合' },
-  { id: 9, name: '冰釀咖啡', price: 105, image: imageBase64, category: '咖啡飲品', description: '冷萃技術打造滑順風味' },
-  { id: 5, name: '法式三明治', price: 130, image: imageBase64, category: '輕食套餐', description: '經典火腿起司法國麵包' },
-  { id: 10, name: '煙燻鮭魚沙拉', price: 140, image: imageBase64, category: '輕食套餐', description: '健康清爽的煙燻鮭魚搭配新鮮蔬菜' },
-  { id: 11, name: '帕尼尼組合餐', price: 135, image: imageBase64, category: '輕食套餐', description: '熱壓帕尼尼搭配飲品與沙拉' },
+  { id: 1, name: '藍莓起司蛋糕', description: '濃郁藍莓與起司交織出的完美滋味', price: 120, image: imageBase64, category: '精選甜點' },
+  { id: 2, name: '提拉米蘇', description: '經典義式風味，口感綿密', price: 110, image: imageBase64, category: '精選甜點' },
+  { id: 6, name: '草莓千層', description: '層層酥皮搭配新鮮草莓', price: 130, image: imageBase64, category: '精選甜點' },
+  { id: 7, name: '檸檬塔', description: '酸甜交融的清新選擇', price: 115, image: imageBase64, category: '精選甜點' },
+  { id: 3, name: '拿鐵咖啡', description: '香醇牛奶與咖啡的經典搭配', price: 90, image: imageBase64, category: '咖啡飲品' },
+  { id: 4, name: '抹茶歐蕾', description: '日式抹茶與鮮奶的溫潤口感', price: 100, image: imageBase64, category: '咖啡飲品' },
+  { id: 8, name: '卡布奇諾', description: '濃郁咖啡與奶泡的完美比例', price: 95, image: imageBase64, category: '咖啡飲品' },
+  { id: 9, name: '冰釀咖啡', description: '低溫萃取，回甘無苦味', price: 105, image: imageBase64, category: '咖啡飲品' },
+  { id: 5, name: '法式三明治', description: '法式麵包搭配煙燻火腿與起司', price: 130, image: imageBase64, category: '輕食套餐' },
+  { id: 10, name: '煙燻鮭魚沙拉', description: '新鮮蔬菜佐鮭魚，清爽健康', price: 140, image: imageBase64, category: '輕食套餐' },
+  { id: 11, name: '帕尼尼組合餐', description: '熱壓帕尼尼與湯品的組合', price: 135, image: imageBase64, category: '輕食套餐' },
 ];
 
 function App() {
@@ -42,6 +39,7 @@ function App() {
   const [category, setCategory] = useState('精選甜點');
   const [page, setPage] = useState('home');
   const [language, setLanguage] = useState('zh');
+  const [success, setSuccess] = useState(false);
   const [modalItem, setModalItem] = useState(null);
 
   const addToOrder = (item) => {
@@ -51,7 +49,6 @@ function App() {
     } else {
       setOrder((prev) => [...prev, { ...item, quantity: 1 }]);
     }
-    setModalItem(null);
   };
 
   const removeItem = (id) => {
@@ -69,8 +66,9 @@ function App() {
         total,
         createdAt: Timestamp.now()
       });
-      alert("訂單已送出！");
+      setSuccess(true);
       clearOrder();
+      setTimeout(() => setSuccess(false), 2500);
     } catch (e) {
       alert("送出訂單失敗：" + e.message);
     }
@@ -86,15 +84,15 @@ function App() {
       menu: "菜單",
       order: "我的點單",
       businessHours: "營業時間：每日 10:00 - 18:00",
-      address: "地址：新北市三重區正義北路33巷31號",
+      address: "地址：新北市三重區正義北路31號",
       description: "我們是一家專注於午後甜點與咖啡體驗的溫馨小店，歡迎光臨！",
       addToOrder: "加入點單",
       remove: "移除",
       total: "總計",
       clear: "清除清單",
       submit: "送出訂單",
-      scan: "📱 掃描 QR Code 取得訂單",
-      empty: "目前尚未選擇任何餐點"
+      empty: "目前尚未選擇任何餐點",
+      submitted: "🎉 訂單送出成功！感謝您的惠顧！"
     },
     en: {
       title: "Afternoon Café",
@@ -110,24 +108,13 @@ function App() {
       total: "Total",
       clear: "Clear",
       submit: "Submit",
-      scan: "📱 Scan QR Code to view your order",
-      empty: "No items selected yet"
+      empty: "No items selected yet",
+      submitted: "🎉 Order submitted! Thank you!"
     }
   };
 
-  const heroImages = [imageBase64, imageBase64, imageBase64];
-  const sliderSettings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 4000,
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100 pb-20 relative">
       <header className="bg-white shadow rounded-xl p-4 flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold text-orange-600 animate-bounce">☕ {text[language].title}</h1>
         <button onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')} className="text-sm text-gray-600 underline">
@@ -141,99 +128,81 @@ function App() {
         ))}
       </nav>
 
+      {success && (
+        <>
+          <motion.div className="fixed top-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded shadow-lg z-50" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}>
+            {text[language].submitted}
+          </motion.div>
+          <Confetti width={window.innerWidth} height={window.innerHeight} numberOfPieces={250} recycle={false} />
+        </>
+      )}
+
       {page === 'home' && (
         <motion.div className="p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <Slider {...sliderSettings}>
-            {heroImages.map((img, idx) => (
-              <div key={idx}>
-                <img src={img} alt="cafe" className="rounded-xl w-full h-48 object-cover" />
-              </div>
-            ))}
-          </Slider>
-          <h2 className="text-xl font-bold text-orange-600 mt-4 mb-2">{text[language].businessHours}</h2>
+          <h2 className="text-xl font-bold text-orange-600 mb-2">{text[language].businessHours}</h2>
           <p className="text-gray-700 mb-2">{text[language].address}</p>
           <p className="text-gray-600">{text[language].description}</p>
         </motion.div>
       )}
 
       {page === 'menu' && (
-        <motion.div className="p-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h2 className="text-lg mb-2 text-gray-700">{text[language].intro}</h2>
-          <div className="flex gap-2 mb-4 overflow-x-auto">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`px-4 py-1 rounded-full text-sm font-medium transition ${category === cat ? 'bg-orange-500 text-white' : 'bg-white text-gray-700'}`}
-              >
-                {cat}
-              </button>
+        <div className="p-4">
+          <div className="flex flex-wrap gap-2 mb-4 justify-center">
+            {categories.map((c) => (
+              <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 rounded-full border ${category === c ? 'bg-orange-500 text-white' : 'text-orange-600 border-orange-300 hover:bg-orange-100'}`}>{c}</button>
             ))}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {menuItems.filter(item => item.category === category).map((item) => (
-              <motion.div key={item.id} className="bg-white rounded-xl shadow p-3 flex flex-col cursor-pointer" whileHover={{ scale: 1.05 }} onClick={() => setModalItem(item)}>
-                <img src={item.image} alt={item.name} className="rounded w-full h-28 object-cover mb-2" />
-                <h3 className="font-semibold text-lg">{item.name}</h3>
-                <p className="text-sm text-gray-600">${item.price}</p>
+            {menuItems.filter((item) => item.category === category).map((item) => (
+              <motion.div key={item.id} className="bg-white p-2 rounded-xl shadow hover:shadow-lg cursor-pointer" whileHover={{ scale: 1.03 }} onClick={() => setModalItem(item)}>
+                <img src={item.image} alt={item.name} className="rounded-md w-full h-32 object-cover" />
+                <div className="mt-2">
+                  <h3 className="font-bold text-orange-600">{item.name}</h3>
+                  <p className="text-sm text-gray-600">${item.price}</p>
+                </div>
               </motion.div>
             ))}
-          </div>
-        </motion.div>
-      )}
-
-      {modalItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-md max-w-sm w-full">
-            <img src={modalItem.image} alt={modalItem.name} className="w-full h-40 object-cover rounded mb-3" />
-            <h2 className="text-lg font-bold mb-1">{modalItem.name}</h2>
-            <p className="text-sm text-gray-600 mb-2">{modalItem.description}</p>
-            <div className="flex justify-between items-center">
-              <span className="text-orange-600 font-semibold">${modalItem.price}</span>
-              <button onClick={() => addToOrder(modalItem)} className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600">
-                {text[language].addToOrder}
-              </button>
-            </div>
-            <button onClick={() => setModalItem(null)} className="mt-3 text-xs text-gray-500 underline block text-center">關閉</button>
           </div>
         </div>
       )}
 
+      <AnimatePresence>
+        {modalItem && (
+          <motion.div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="bg-white p-6 rounded-xl max-w-sm w-full shadow-xl relative" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
+              <button onClick={() => setModalItem(null)} className="absolute top-2 right-2 text-gray-500">✕</button>
+              <img src={modalItem.image} alt={modalItem.name} className="rounded-md w-full h-40 object-cover mb-4" />
+              <h3 className="font-bold text-lg text-orange-600 mb-1">{modalItem.name}</h3>
+              <p className="text-sm text-gray-600 mb-3">{modalItem.description}</p>
+              <button onClick={() => { addToOrder(modalItem); setModalItem(null); }} className="px-4 py-2 bg-orange-500 text-white rounded-full">{text[language].addToOrder}</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {page === 'order' && (
-        <motion.div className="p-6 bg-white mx-4 rounded-xl shadow" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2 className="text-xl font-bold mb-4 text-orange-600">🧾 {text[language].order}</h2>
-          {order.length > 0 ? (
-            <div>
-              <ul className="space-y-2">
-                {order.map((item) => (
-                  <li key={item.id} className="flex justify-between items-center">
-                    <div className="text-sm">
-                      {item.name} x {item.quantity} = ${item.price * item.quantity}
-                    </div>
-                    <button onClick={() => removeItem(item.id)} className="text-xs text-red-500 hover:underline">
-                      {text[language].remove}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="text-right text-lg font-semibold mt-4">
-                {text[language].total}：<span className="text-orange-600">${total}</span>
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button onClick={clearOrder} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
-                  {text[language].clear}
-                </button>
-                <button onClick={submitOrder} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                  {text[language].submit}
-                </button>
-              </div>
-              <div className="mt-6 border rounded p-4 bg-white inline-block">
-                <p className="text-xs text-gray-500 mb-2">{text[language].scan}</p>
-                <QRCode value={JSON.stringify(order)} size={120} />
-              </div>
-            </div>
+        <motion.div className="p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          {order.length === 0 ? (
+            <p className="text-center text-gray-500">{text[language].empty}</p>
           ) : (
-            <p className="text-gray-400 text-sm">{text[language].empty}</p>
+            <motion.ul initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}>
+              {order.map((item) => (
+                <motion.li key={item.id} className="flex justify-between items-center bg-white p-3 mb-2 rounded shadow" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                  <div>
+                    <h4 className="font-semibold text-orange-600">{item.name}</h4>
+                    <p className="text-sm text-gray-600">x{item.quantity}</p>
+                  </div>
+                  <button onClick={() => removeItem(item.id)} className="text-red-500">{text[language].remove}</button>
+                </motion.li>
+              ))}
+            </motion.ul>
+          )}
+          {order.length > 0 && (
+            <div className="mt-4 text-right">
+              <p className="font-bold text-lg text-orange-600">{text[language].total}: ${total}</p>
+              <button onClick={clearOrder} className="text-sm text-gray-500 mr-4">{text[language].clear}</button>
+              <button onClick={submitOrder} className="px-4 py-2 bg-green-500 text-white rounded-full">{text[language].submit}</button>
+            </div>
           )}
         </motion.div>
       )}
